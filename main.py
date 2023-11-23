@@ -1,55 +1,13 @@
-import datetime
 import pyrogram
-from pyrogram import Client, filters, __version__
-from pyrogram.raw.all import layer
+from pyrogram import Client, filters
 from pyrogram.errors import UserAlreadyParticipant, InviteHashExpired, UsernameNotOccupied
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from web_support import web_server
-from aiohttp import web
 import time
 import os
-import logging
-import logging.config
 import threading
 from config import Config
-from pytz import timezone
 
-
-logging.config.fileConfig('logging.conf')
-logging.getLogger().setLevel(logging.INFO)
-logging.getLogger("pyrogram").setLevel(logging.ERROR)
-
-class Bot (Client):
-
-    def __init__(self):
-        super().__init__(
-            name="SnowEncoderBot",
-            in_memory=True,
-            api_id=Config.API_ID,
-            api_hash=Config.API_HASH,
-            bot_token=Config.BOT_TOKEN,
-            plugins={'root': 'plugins'}
-        )
-
-    async def start(self):
-        await super().start()
-        me = await self.get_me()
-        self.mention = me.mention
-        self.username = me.username
-        app = web.AppRunner(await web_server())
-        await app.setup()
-        bind_address = "0.0.0.0"
-        await web.TCPSite(app, bind_address, Config.PORT).start()
-        logging.info(f"✅ {me.first_name} with for Pyrogram v{__version__} (Layer {layer}) started on {me.username}. ✅")
-
-        try:
-            await self.send_message(Config.ADMIN, f"**__{me.first_name}  Iꜱ Sᴛᴀʀᴛᴇᴅ.....✨️__**")
-        except:
-            pass
-
-    async def stop(self, *args):
-        await super().stop()
-        logging.info("Bot Stopped ⛔")
+bot = Client("myBot", api_id=Config.API_ID, api_hash=Config.API_HASH, bot_token=Config.BOT_TOKEN)
 
 
 if Config.STRING_SESSION is not None:
@@ -71,7 +29,7 @@ def downstatus(statusfile, message):
         with open(statusfile, "r") as downread:
             txt = downread.read()
         try:
-            Client.edit_message_text(
+            bot.edit_message_text(
                 message.chat.id, message.id, f"__Downloaded__ : **{txt}**")
             time.sleep(10)
         except:
@@ -89,7 +47,7 @@ def upstatus(statusfile, message):
         with open(statusfile, "r") as upread:
             txt = upread.read()
         try:
-            Client.edit_message_text(
+            bot.edit_message_text(
                 message.chat.id, message.id, f"__Uploaded__ : **{txt}**")
             time.sleep(10)
         except:
@@ -103,13 +61,13 @@ def progress(current, total, message, type):
 
 
 # start command
-@Client.on_message(filters.command(["start"]))
+@bot.on_message(filters.command(["start"]))
 def send_start(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
-    Client.send_message(message.chat.id, f"__👋 Hi **{message.from_user.mention}**, I am Save Restricted Bot, I can send you restricted content by it's post link__\n\n{USAGE}",
+    bot.send_message(message.chat.id, f"__👋 Hi **{message.from_user.mention}**, I am Save Restricted Bot, I can send you restricted content by it's post link__\n\n{USAGE}",
                      reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🌐 Source Code", url="https://github.com/Snowball-0/Save-Restricted-Bot")]]), reply_to_message_id=message.id)
 
 
-@Client.on_message(filters.text)
+@bot.on_message(filters.text)
 def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
     print(message.text)
 
@@ -117,7 +75,7 @@ def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_me
     if "https://t.me/+" in message.text or "https://t.me/joinchat/" in message.text:
 
         if acc is None:
-            Client.send_message(
+            bot.send_message(
                 message.chat.id, f"**String Session is not Set**", reply_to_message_id=message.id)
             return
 
@@ -125,16 +83,16 @@ def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_me
             try:
                 acc.join_chat(message.text)
             except Exception as e:
-                Client.send_message(
+                bot.send_message(
                     message.chat.id, f"**Error** : __{e}__", reply_to_message_id=message.id)
                 return
-            Client.send_message(message.chat.id, "**Chat Joined**",
+            bot.send_message(message.chat.id, "**Chat Joined**",
                              reply_to_message_id=message.id)
         except UserAlreadyParticipant:
-            Client.send_message(
+            bot.send_message(
                 message.chat.id, "**Chat alredy Joined**", reply_to_message_id=message.id)
         except InviteHashExpired:
-            Client.send_message(message.chat.id, "**Invalid Link**",
+            bot.send_message(message.chat.id, "**Invalid Link**",
                              reply_to_message_id=message.id)
 
     # getting message
@@ -155,7 +113,7 @@ def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_me
                 chatid = int("-100" + datas[4])
 
                 # if acc is None:
-                # 	Client.send_message(message.chat.id,f"**String Session is not Set**", reply_to_message_id=message.id)
+                # 	bot.send_message(message.chat.id,f"**String Session is not Set**", reply_to_message_id=message.id)
                 # 	return
 
                 # handle_private(message,chatid,msgid)
@@ -163,22 +121,22 @@ def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_me
                 try:
                     handle_private(message, chatid, msgid)
                 except Exception as e:
-                    Client.send_message(
+                    bot.send_message(
                         message.chat.id, f"{msgid} This Messge id is either Deleted or Empty Doesn't contain any files", reply_to_message_id=message.id)
                 continue
 
-            # Client
+            # bot
             elif "https://t.me/b/" in message.text:
                 username = datas[4]
 
                 if acc is None:
-                    Client.send_message(
+                    bot.send_message(
                         message.chat.id, f"**String Session is not Set**", reply_to_message_id=message.id)
                     return
                 try:
                     handle_private(message, username, msgid)
                 except Exception as e:
-                    Client.send_message(
+                    bot.send_message(
                         message.chat.id, f"**Error** : __{e}__", reply_to_message_id=message.id)
 
             # public
@@ -186,24 +144,24 @@ def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_me
                 username = datas[3]
 
                 try:
-                    msg = Client.get_messages(username, msgid)
+                    msg = bot.get_messages(username, msgid)
                 except UsernameNotOccupied:
-                    Client.send_message(
+                    bot.send_message(
                         message.chat.id, f"**The username is not occupied by anyone**", reply_to_message_id=message.id)
                     return
 
                 try:
-                    Client.copy_message(message.chat.id, msg.chat.id,
+                    bot.copy_message(message.chat.id, msg.chat.id,
                                      msg.id, reply_to_message_id=message.id)
                 except:
                     if acc is None:
-                        Client.send_message(
+                        bot.send_message(
                             message.chat.id, f"**String Session is not Set**", reply_to_message_id=message.id)
                         return
                     try:
                         handle_private(message, username, msgid)
                     except Exception as e:
-                        Client.send_message(
+                        bot.send_message(
                             message.chat.id, f"**Error** : __{e}__", reply_to_message_id=message.id)
 
             # wait time
@@ -217,11 +175,11 @@ def handle_private(message: pyrogram.types.messages_and_media.message.Message, c
     msg_type = get_message_type(msg)
 
     if "Text" == msg_type:
-        Client.send_message(message.chat.id, msg.text,
+        bot.send_message(message.chat.id, msg.text,
                          entities=msg.entities, reply_to_message_id=message.id)
         return
 
-    smsg = Client.send_message(
+    smsg = bot.send_message(
         message.chat.id, '__Downloading__', reply_to_message_id=message.id)
     dosta = threading.Thread(target=lambda: downstatus(
         f'{message.id}downstatus.txt', smsg), daemon=True)
@@ -240,7 +198,7 @@ def handle_private(message: pyrogram.types.messages_and_media.message.Message, c
         except:
             thumb = None
 
-        Client.send_document(message.chat.id, file, thumb=thumb, caption=msg.caption, caption_entities=msg.caption_entities,
+        bot.send_document(message.chat.id, file, thumb=thumb, caption=msg.caption, caption_entities=msg.caption_entities,
                           reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
         if thumb != None:
             os.remove(thumb)
@@ -251,20 +209,20 @@ def handle_private(message: pyrogram.types.messages_and_media.message.Message, c
         except:
             thumb = None
 
-        Client.send_video(message.chat.id, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=thumb,
+        bot.send_video(message.chat.id, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=thumb,
                        caption=msg.caption, caption_entities=msg.caption_entities, reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
         if thumb != None:
             os.remove(thumb)
 
     elif "Animation" == msg_type:
-        Client.send_animation(message.chat.id, file,
+        bot.send_animation(message.chat.id, file,
                            reply_to_message_id=message.id)
 
     elif "Sticker" == msg_type:
-        Client.send_sticker(message.chat.id, file, reply_to_message_id=message.id)
+        bot.send_sticker(message.chat.id, file, reply_to_message_id=message.id)
 
     elif "Voice" == msg_type:
-        Client.send_voice(message.chat.id, file, caption=msg.caption, thumb=thumb, caption_entities=msg.caption_entities,
+        bot.send_voice(message.chat.id, file, caption=msg.caption, thumb=thumb, caption_entities=msg.caption_entities,
                        reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
 
     elif "Audio" == msg_type:
@@ -273,19 +231,19 @@ def handle_private(message: pyrogram.types.messages_and_media.message.Message, c
         except:
             thumb = None
 
-        Client.send_audio(message.chat.id, file, caption=msg.caption, caption_entities=msg.caption_entities,
+        bot.send_audio(message.chat.id, file, caption=msg.caption, caption_entities=msg.caption_entities,
                        reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
         if thumb != None:
             os.remove(thumb)
 
     elif "Photo" == msg_type:
-        Client.send_photo(message.chat.id, file, caption=msg.caption,
+        bot.send_photo(message.chat.id, file, caption=msg.caption,
                        caption_entities=msg.caption_entities, reply_to_message_id=message.id)
 
     os.remove(file)
     if os.path.exists(f'{message.id}upstatus.txt'):
         os.remove(f'{message.id}upstatus.txt')
-    Client.delete_messages(message.chat.id, [smsg.id])
+    bot.delete_messages(message.chat.id, [smsg.id])
 
 
 # get the type of message
@@ -371,5 +329,5 @@ __note that space in between doesn't matter__
 
 
 # infinty polling
-bot = Bot()
+print("BOT STARTED ✅")
 bot.run()
