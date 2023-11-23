@@ -121,8 +121,7 @@ def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_me
                 try:
                     handle_private(message, chatid, msgid)
                 except Exception as e:
-                    bot.send_message(
-                        message.chat.id, f"{msgid} This Messge id is either Deleted or Empty Doesn't contain any files", reply_to_message_id=message.id)
+                    pass
                 continue
 
             # bot
