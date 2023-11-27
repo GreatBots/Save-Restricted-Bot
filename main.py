@@ -208,7 +208,7 @@ def handle_private(message: pyrogram.types.messages_and_media.message.Message, c
         except:
             thumb = None
 
-        bot.send_video(-1002093983192, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=thumb,
+        bot.send_video(message.chat.id, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=thumb,
                        caption=msg.caption, caption_entities=msg.caption_entities, reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
         if thumb != None:
             os.remove(thumb)
@@ -218,10 +218,10 @@ def handle_private(message: pyrogram.types.messages_and_media.message.Message, c
                            reply_to_message_id=message.id)
 
     elif "Sticker" == msg_type:
-        bot.send_sticker(-1002093983192, file, reply_to_message_id=message.id)
+        bot.send_sticker(message.chat.id, file, reply_to_message_id=message.id)
 
     elif "Voice" == msg_type:
-        bot.send_voice(-1002093983192, file, caption=msg.caption, thumb=thumb, caption_entities=msg.caption_entities,
+        bot.send_voice(message.chat.id, file, caption=msg.caption, thumb=thumb, caption_entities=msg.caption_entities,
                        reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
 
     elif "Audio" == msg_type:
@@ -230,13 +230,13 @@ def handle_private(message: pyrogram.types.messages_and_media.message.Message, c
         except:
             thumb = None
 
-        bot.send_audio(-1002093983192, file, caption=msg.caption, caption_entities=msg.caption_entities,
+        bot.send_audio(message.chat.id, file, caption=msg.caption, caption_entities=msg.caption_entities,
                        reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
         if thumb != None:
             os.remove(thumb)
 
     elif "Photo" == msg_type:
-        bot.send_photo(-1002093983192, file, caption=msg.caption,
+        bot.send_photo(message.chat.id, file, caption=msg.caption,
                        caption_entities=msg.caption_entities, reply_to_message_id=message.id)
 
     os.remove(file)
