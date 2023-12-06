@@ -2,5 +2,5 @@ pyrogram
 tgcrypto
 Flask
 gunicorn
-aiohttp
+aiohttp==3.8.1
 pyproject-toml
