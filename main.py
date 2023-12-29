@@ -11,7 +11,7 @@ bot = Client("myBot", api_id=Config.API_ID, api_hash=Config.API_HASH, bot_token=
 
 
 if Config.STRING_SESSION is not None:
-    acc = Client("myacc", api_id=21288218, api_hash=dd47d5c4fbc31534aa764ef9918b3acd, session_string=Config.STRING_SESSION)
+    acc = Client("myacc", api_id=Config.API_ID, api_hash=Config.API_HASH, session_string=Config.STRING_SESSION)
     acc.start()
 else:
     acc = None
