@@ -26,11 +26,6 @@
       "description": "Your Bot Token From @BotFather",
       "value": "",
       "required": true
-    },
-    "DB_URL": {
-      "description": "Your mongodb database url",
-      "value": "",
-      "required": true
     }
   }
 }
