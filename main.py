@@ -6,12 +6,18 @@ import time
 import os
 import threading
 from config import Config
+from database import db
+from hachoir.metadata import extractMetadata
+from hachoir.parser import createParser
+from utils import convert, humanbytes
 
-bot = Client("myBot", api_id=Config.API_ID, api_hash=Config.API_HASH, bot_token=Config.BOT_TOKEN)
+bot = Client("myBot", api_id=Config.API_ID,
+             api_hash=Config.API_HASH, bot_token=Config.BOT_TOKEN)
 
 
 if Config.STRING_SESSION is not None:
-    acc = Client("myacc", api_id=Config.API_ID, api_hash=Config.API_HASH, session_string=Config.STRING_SESSION)
+    acc = Client("myacc", api_id=Config.API_ID,
+                 api_hash=Config.API_HASH, session_string=Config.STRING_SESSION)
     acc.start()
 else:
     acc = None
@@ -63,8 +69,72 @@ def progress(current, total, message, type):
 # start command
 @bot.on_message(filters.command(["start"]))
 def send_start(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
+    db.add_user(client, message)
     bot.send_message(message.chat.id, f"__👋 Hi **{message.from_user.mention}**, I am Save Restricted Bot, I can send you restricted content by it's post link__\n\n{USAGE}",
                      reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🌐 Source Code", url="https://github.com/Snowball-0/Save-Restricted-Bot")]]), reply_to_message_id=message.id)
+
+
+# set thumbnail command
+@bot.on_message(filters.private & filters.photo)
+def set_thumbnail(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
+    ms = message.reply_text("Please Wait...", reply_to_message_id=message.id)
+    db.set_thumbnail(message.from_user.id, file_id=message.photo.file_id)
+    ms.edit("**Thumbnail Saved ✅**")
+
+
+# see thumbnail command
+@bot.on_message(filters.command(["view_thumb", "viewthumb"]))
+def view_thumbnail(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
+    thumb = db.get_thumbnail(message.from_user.id)
+
+    if thumb:
+        client.send_photo(chat_id=message.chat.id, photo=thumb)
+
+    else:
+        message.reply_text("**You don't have any thumbnail ☹️**",
+                           reply_to_message_id=message.id)
+
+# delete thumbnail command
+
+
+@bot.on_message(filters.command(["del_thumb", "delthumb"]))
+def del_thumbnail(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
+    db.set_thumbnail(message.from_user.id, file_id=None)
+    message.reply_text("**Thumbnail Deleted ❌**",
+                       reply_to_message_id=message.id)
+
+
+# set caption command
+@bot.on_message(filters.command('set_caption'))
+def set_cpation(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
+    if len(message.command) == 1:
+        return message.reply_text("**Gɪᴠᴇ Tʜᴇ Cᴀᴩᴛɪᴏɴ\n\nExᴀᴍᴩʟᴇ:- `/set_caption {filename}\n\n💾 Sɪᴢᴇ: {filesize}\n\n⏰ Dᴜʀᴀᴛɪᴏɴ: {duration}`**")
+    caption = message.text.split(" ", 1)[1]
+    db.set_caption(message.from_user.id, caption=caption)
+    message.reply_text("**Caption Saved ✅**", reply_to_message_id=message.id)
+
+# see caption command
+
+
+@bot.on_message(filters.command(['see_caption', 'view_caption']))
+def see_caption(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
+    caption = db.get_caption(message.from_user.id)
+    if caption:
+        message.reply_text(f"**Your Caption:-**\n\n`{caption}`")
+    else:
+        message.reply_text("__**😔 Yᴏᴜ Dᴏɴ'ᴛ Hᴀᴠᴇ Aɴy Cᴀᴩᴛɪᴏɴ**__")
+
+# delete caption command
+
+
+@bot.on_message(filters.command(["del_caption", "delcaption"]))
+def del_caption(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
+    caption = db.get_caption(message.from_user.id)
+    if not caption:
+        return message.reply_text("__**😔 Yᴏᴜ Dᴏɴ'ᴛ Hᴀᴠᴇ Aɴy Cᴀᴩᴛɪᴏɴ**__")
+    db.set_caption(message.from_user.id, caption=None)
+    message.reply_text("**Caption Deleted ❌️**",
+                       reply_to_message_id=message.id)
 
 
 @bot.on_message(filters.text)
@@ -179,7 +249,7 @@ def handle_private(message: pyrogram.types.messages_and_media.message.Message, c
         return
 
     smsg = bot.send_message(
-        message.chat.id, '__Downloading__', reply_to_message_id=message.id)
+        message.chat.id, '**__Downloading__**', reply_to_message_id=message.id)
     dosta = threading.Thread(target=lambda: downstatus(
         f'{message.id}downstatus.txt', smsg), daemon=True)
     dosta.start()
@@ -193,25 +263,72 @@ def handle_private(message: pyrogram.types.messages_and_media.message.Message, c
 
     if "Document" == msg_type:
         try:
-            thumb = acc.download_media(msg.document.thumbs[0].file_id)
-        except:
-            thumb = None
+            fileData = getattr(msg, msg.media.value)
+            thumb = db.get_thumbnail(message.from_user.id)
+            caption = db.get_caption(message.from_user.id)
+            duration = 0
+            try:
+                metadata = extractMetadata(createParser(file))
+                if metadata.has("duration"):
+                    duration = metadata.get('duration').seconds
+            except:
+                pass
+            if caption:
+                try:
+                    c_caption = caption.format(filename=fileData.file_name, filesize=humanbytes(
+                        fileData.file_size), duration=convert(duration))
+                except Exception as e:
+                    return message.reply_text(text=f"Yᴏᴜʀ Cᴀᴩᴛɪᴏɴ Eʀʀᴏʀ Exᴄᴇᴩᴛ Kᴇyᴡᴏʀᴅ Aʀɢᴜᴍᴇɴᴛ ●> ({e})")
+            else:
+                c_caption = msg.caption
 
-        bot.send_document(message.chat.id, file, thumb=thumb, caption=msg.caption, caption_entities=msg.caption_entities,
+            if thumb:
+                ph_path = bot.download_media(thumb)
+
+            else:
+                ph_path = acc.download_media(msg.video.thumbs[0].file_id)
+
+        except:
+            ph_path = None
+        bot.send_document(message.chat.id, file, thumb=ph_path, caption=c_caption, caption_entities=msg.caption_entities,
                           reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
-        if thumb != None:
-            os.remove(thumb)
+        if ph_path != None:
+            os.remove(ph_path)
 
     elif "Video" == msg_type:
         try:
-            thumb = acc.download_media(msg.video.thumbs[0].file_id)
-        except:
-            thumb = None
+            fileData = getattr(msg, msg.media.value)
+            thumb = db.get_thumbnail(message.from_user.id)
+            caption = db.get_caption(message.from_user.id)
+            duration = 0
+            try:
+                metadata = extractMetadata(createParser(file))
+                if metadata.has("duration"):
+                    duration = metadata.get('duration').seconds
+            except:
+                pass
+            if caption:
+                try:
+                    c_caption = caption.format(filename=fileData.file_name, filesize=humanbytes(
+                        fileData.file_size), duration=convert(duration))
+                except Exception as e:
+                    return message.reply_text(text=f"Yᴏᴜʀ Cᴀᴩᴛɪᴏɴ Eʀʀᴏʀ Exᴄᴇᴩᴛ Kᴇyᴡᴏʀᴅ Aʀɢᴜᴍᴇɴᴛ ●> ({e})")
+            else:
+                c_caption = msg.caption
 
-        bot.send_video(message.chat.id, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=thumb,
-                       caption=msg.caption, caption_entities=msg.caption_entities, reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
-        if thumb != None:
-            os.remove(thumb)
+            if thumb:
+                ph_path = bot.download_media(thumb)
+
+            else:
+                ph_path = acc.download_media(msg.video.thumbs[0].file_id)
+
+        except:
+            ph_path = None
+
+        bot.send_video(message.chat.id, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=ph_path,
+                       caption=c_caption, caption_entities=msg.caption_entities, reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
+        if ph_path != None:
+            os.remove(ph_path)
 
     elif "Animation" == msg_type:
         bot.send_animation(message.chat.id, file,
@@ -243,7 +360,6 @@ def handle_private(message: pyrogram.types.messages_and_media.message.Message, c
     if os.path.exists(f'{message.id}upstatus.txt'):
         os.remove(f'{message.id}upstatus.txt')
     bot.delete_messages(message.chat.id, [smsg.id])
-
 
 # get the type of message
 def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
