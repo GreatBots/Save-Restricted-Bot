@@ -6,12 +6,9 @@ import time
 import os
 import threading
 from config import Config
-from database import db
-from hachoir.metadata import extractMetadata
-from hachoir.parser import createParser
-from utils import convert, humanbytes
 
 bot = Client("myBot", api_id=Config.API_ID, api_hash=Config.API_HASH, bot_token=Config.BOT_TOKEN)
+
 
 if Config.STRING_SESSION is not None:
     acc = Client("myacc", api_id=Config.API_ID, api_hash=Config.API_HASH, session_string=Config.STRING_SESSION)
@@ -20,96 +17,55 @@ else:
     acc = None
 
 # download status
+
+
 def downstatus(statusfile, message):
-    while not os.path.exists(statusfile):
-        pass
+    while True:
+        if os.path.exists(statusfile):
+            break
 
     time.sleep(3)
     while os.path.exists(statusfile):
         with open(statusfile, "r") as downread:
             txt = downread.read()
         try:
-            bot.edit_message_text(message.chat.id, message.id, f"__Downloaded__ : **{txt}**")
+            bot.edit_message_text(
+                message.chat.id, message.id, f"__Downloaded__ : **{txt}**")
             time.sleep(10)
         except:
             time.sleep(5)
 
+
 # upload status
 def upstatus(statusfile, message):
-    while not os.path.exists(statusfile):
-        pass
+    while True:
+        if os.path.exists(statusfile):
+            break
 
     time.sleep(3)
     while os.path.exists(statusfile):
         with open(statusfile, "r") as upread:
             txt = upread.read()
         try:
-            bot.edit_message_text(message.chat.id, message.id, f"__Uploaded__ : **{txt}**")
+            bot.edit_message_text(
+                message.chat.id, message.id, f"__Uploaded__ : **{txt}**")
             time.sleep(10)
         except:
             time.sleep(5)
 
+
 # progress writter
 def progress(current, total, message, type):
-    with open(os.path.join(f'{message.id}{type}status.txt'), "w") as fileup:
+    with open(f'{message.id}{type}status.txt', "w") as fileup:
         fileup.write(f"{current * 100 / total:.1f}%")
+
 
 # start command
 @bot.on_message(filters.command(["start"]))
 def send_start(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
-    db.add_user(client, message)
-    bot.send_message(message.chat.id, f"__👋 Hi **{message.from_user.mention}**, I am Save Restricted Bot, I can send you restricted content by its post link__\n\n{USAGE}",
+    bot.send_message(message.chat.id, f"__👋 Hi **{message.from_user.mention}**, I am Save Restricted Bot, I can send you restricted content by it's post link__\n\n{USAGE}",
                      reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🌐 Source Code", url="https://github.com/Snowball-0/Save-Restricted-Bot")]]), reply_to_message_id=message.id)
 
-# set thumbnail command
-@bot.on_message(filters.private & filters.photo)
-def set_thumbnail(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
-    ms = message.reply_text("Please Wait...", reply_to_message_id=message.id)
-    db.set_thumbnail(message.from_user.id, file_id=message.photo.file_id)
-    ms.edit("**Thumbnail Saved ✅**")
-
-# see thumbnail command
-@bot.on_message(filters.command(["view_thumb", "viewthumb"]))
-def view_thumbnail(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
-    thumb = db.get_thumbnail(message.from_user.id)
-
-    if thumb:
-        client.send_photo(chat_id=message.chat.id, photo=thumb)
-    else:
-        message.reply_text("**You don't have any thumbnail ☹️**", reply_to_message_id=message.id)
-
-# delete thumbnail command
-@bot.on_message(filters.command(["del_thumb", "delthumb"]))
-def del_thumbnail(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
-    db.set_thumbnail(message.from_user.id, file_id=None)
-    message.reply_text("**Thumbnail Deleted ❌**", reply_to_message_id=message.id)
-
-# set caption command
-@bot.on_message(filters.command('set_caption'))
-def set_cpation(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
-    if len(message.command) == 1:
-        return message.reply_text("**Give The Caption\n\nExample:- `/set_caption {filename}\n\n💾 Size: {filesize}\n\n⏰ Duration: {duration}`**")
-    caption = message.text.split(" ", 1)[1]
-    db.set_caption(message.from_user.id, caption=caption)
-    message.reply_text("**Caption Saved ✅**", reply_to_message_id=message.id)
-
-# see caption command
-@bot.on_message(filters.command(['see_caption', 'view_caption']))
-def see_caption(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
-    caption = db.get_caption(message.from_user.id)
-    if caption:
-        message.reply_text(f"**Your Caption:-**\n\n`{caption}`")
-    else:
-        message.reply_text("__**😔 You Don't Have Any Caption**__")
-
-# delete caption command
-@bot.on_message(filters.command(["del_caption", "delcaption"]))
-def del_caption(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
-    caption = db.get_caption(message.from_user.id)
-    if not caption:
-        return message.reply_text("__**😔 You Don't Have Any Caption**__")
-    db.set_caption(message.from_user.id, caption=None)
-    message.reply_text("**Caption Deleted ❌**", reply_to_message_id=message.id)
 
 @bot.on_message(filters.text)
 def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
@@ -117,24 +73,31 @@ def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_me
 
     # joining chats
     if "https://t.me/+" in message.text or "https://t.me/joinchat/" in message.text:
+
         if acc is None:
-            bot.send_message(message.chat.id, f"**String Session is not Set**", reply_to_message_id=message.id)
+            bot.send_message(
+                message.chat.id, f"**String Session is not Set**", reply_to_message_id=message.id)
             return
 
         try:
             try:
                 acc.join_chat(message.text)
             except Exception as e:
-                bot.send_message(message.chat.id, f"**Error** : __{e}__", reply_to_message_id=message.id)
+                bot.send_message(
+                    message.chat.id, f"**Error** : __{e}__", reply_to_message_id=message.id)
                 return
-            bot.send_message(message.chat.id, "**Chat Joined**", reply_to_message_id=message.id)
+            bot.send_message(message.chat.id, "**Chat Joined**",
+                             reply_to_message_id=message.id)
         except UserAlreadyParticipant:
-            bot.send_message(message.chat.id, "**Chat already Joined**", reply_to_message_id=message.id)
+            bot.send_message(
+                message.chat.id, "**Chat alredy Joined**", reply_to_message_id=message.id)
         except InviteHashExpired:
-            bot.send_message(message.chat.id, "**Invalid Link**", reply_to_message_id=message.id)
+            bot.send_message(message.chat.id, "**Invalid Link**",
+                             reply_to_message_id=message.id)
 
     # getting message
     elif "https://t.me/" in message.text:
+
         datas = message.text.split("/")
         temp = datas[-1].replace("?single", "").split("-")
         fromID = int(temp[0].strip())
@@ -144,9 +107,16 @@ def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_me
             toID = fromID
 
         for msgid in range(fromID, toID+1):
+
             # private
             if "https://t.me/c/" in message.text:
                 chatid = int("-100" + datas[4])
+
+                # if acc is None:
+                # 	bot.send_message(message.chat.id,f"**String Session is not Set**", reply_to_message_id=message.id)
+                # 	return
+
+                # handle_private(message,chatid,msgid)
 
                 try:
                     handle_private(message, chatid, msgid)
@@ -159,12 +129,14 @@ def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_me
                 username = datas[4]
 
                 if acc is None:
-                    bot.send_message(message.chat.id, f"**String Session is not Set**", reply_to_message_id=message.id)
+                    bot.send_message(
+                        message.chat.id, f"**String Session is not Set**", reply_to_message_id=message.id)
                     return
                 try:
                     handle_private(message, username, msgid)
                 except Exception as e:
-                    bot.send_message(message.chat.id, f"**Error** : __{e}__", reply_to_message_id=message.id)
+                    bot.send_message(
+                        message.chat.id, f"**Error** : __{e}__", reply_to_message_id=message.id)
 
             # public
             else:
@@ -173,111 +145,84 @@ def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_me
                 try:
                     msg = bot.get_messages(username, msgid)
                 except UsernameNotOccupied:
-                    bot.send_message(message.chat.id, f"**The username is not occupied by anyone**", reply_to_message_id=message.id)
+                    bot.send_message(
+                        message.chat.id, f"**The username is not occupied by anyone**", reply_to_message_id=message.id)
                     return
 
                 try:
-                    bot.copy_message(message.chat.id, msg.chat.id, msg.id, reply_to_message_id=message.id)
+                    bot.copy_message(message.chat.id, msg.chat.id,
+                                     msg.id, reply_to_message_id=message.id)
                 except:
                     if acc is None:
-                        bot.send_message(message.chat.id, f"**String Session is not Set**", reply_to_message_id=message.id)
+                        bot.send_message(
+                            message.chat.id, f"**String Session is not Set**", reply_to_message_id=message.id)
                         return
                     try:
                         handle_private(message, username, msgid)
                     except Exception as e:
-                        bot.send_message(message.chat.id, f"**Error** : __{e}__", reply_to_message_id=message.id)
+                        bot.send_message(
+                            message.chat.id, f"**Error** : __{e}__", reply_to_message_id=message.id)
 
+            # wait time
             time.sleep(3)
+
 
 # handle private
 def handle_private(message: pyrogram.types.messages_and_media.message.Message, chatid: int, msgid: int):
-    msg: pyrogram.types.messages_and_media.message.Message = acc.get_messages(chatid, msgid)
+    msg: pyrogram.types.messages_and_media.message.Message = acc.get_messages(
+        chatid, msgid)
     msg_type = get_message_type(msg)
 
     if "Text" == msg_type:
-        bot.send_message(message.chat.id, msg.text, entities=msg.entities, reply_to_message_id=message.id)
+        bot.send_message(message.chat.id, msg.text,
+                         entities=msg.entities, reply_to_message_id=message.id)
         return
 
-    smsg = bot.send_message(message.chat.id, '**__Downloading__**', reply_to_message_id=message.id)
-    dosta = threading.Thread(target=lambda: downstatus(f'{message.id}downstatus.txt', smsg), daemon=True)
+    smsg = bot.send_message(
+        message.chat.id, '__Downloading__', reply_to_message_id=message.id)
+    dosta = threading.Thread(target=lambda: downstatus(
+        f'{message.id}downstatus.txt', smsg), daemon=True)
     dosta.start()
-    file = acc.download_media(msg, progress=progress, progress_args=[message, "down"])
+    file = acc.download_media(msg, progress=progress,
+                              progress_args=[message, "down"])
     os.remove(f'{message.id}downstatus.txt')
 
-    upsta = threading.Thread(target=lambda: upstatus(f'{message.id}upstatus.txt', smsg), daemon=True)
+    upsta = threading.Thread(target=lambda: upstatus(
+        f'{message.id}upstatus.txt', smsg), daemon=True)
     upsta.start()
 
     if "Document" == msg_type:
         try:
-            fileData = getattr(msg, msg.media.value)
-            thumb = db.get_thumbnail(message.from_user.id)
-            caption = db.get_caption(message.from_user.id)
-            duration = 0
-            try:
-                metadata = extractMetadata(createParser(file))
-                if metadata.has("duration"):
-                    duration = metadata.get('duration').seconds
-            except:
-                pass
-            if caption:
-                try:
-                    c_caption = caption.format(filename=fileData.file_name, filesize=humanbytes(fileData.file_size), duration=convert(duration))
-                except Exception as e:
-                    return message.reply_text(text=f"Your Caption Error Exception Argument ●> ({e})")
-            else:
-                c_caption = msg.caption
-
-            if thumb:
-                ph_path = bot.download_media(thumb)
-            else:
-                ph_path = acc.download_media(msg.video.thumbs[0].file_id)
-
+            thumb = acc.download_media(msg.document.thumbs[0].file_id)
         except:
-            ph_path = None
-        bot.send_document(message.chat.id, file, thumb=ph_path, caption=c_caption, caption_entities=msg.caption_entities, reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
-        if ph_path is not None:
-            os.remove(ph_path)
+            thumb = None
+
+        bot.send_document(message.chat.id, file, thumb=thumb, caption=msg.caption, caption_entities=msg.caption_entities,
+                          reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
+        if thumb != None:
+            os.remove(thumb)
 
     elif "Video" == msg_type:
         try:
-            fileData = getattr(msg, msg.media.value)
-            thumb = db.get_thumbnail(message.from_user.id)
-            caption = db.get_caption(message.from_user.id)
-            duration = 0
-            try:
-                metadata = extractMetadata(createParser(file))
-                if metadata.has("duration"):
-                    duration = metadata.get('duration').seconds
-            except:
-                pass
-            if caption:
-                try:
-                    c_caption = caption.format(filename=fileData.file_name, filesize=humanbytes(fileData.file_size), duration=convert(duration))
-                except Exception as e:
-                    return message.reply_text(text=f"Your Caption Error Exception Argument ●> ({e})")
-            else:
-                c_caption = msg.caption
-
-            if thumb:
-                ph_path = bot.download_media(thumb)
-            else:
-                ph_path = acc.download_media(msg.video.thumbs[0].file_id)
-
+            thumb = acc.download_media(msg.video.thumbs[0].file_id)
         except:
-            ph_path = None
+            thumb = None
 
-        bot.send_video(message.chat.id, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=ph_path, caption=c_caption, caption_entities=msg.caption_entities, reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
-        if ph_path is not None:
-            os.remove(ph_path)
+        bot.send_video(message.chat.id, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=thumb,
+                       caption=msg.caption, caption_entities=msg.caption_entities, reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
+        if thumb != None:
+            os.remove(thumb)
 
     elif "Animation" == msg_type:
-        bot.send_animation(message.chat.id, file, reply_to_message_id=message.id)
+        bot.send_animation(message.chat.id, file,
+                           reply_to_message_id=message.id)
 
     elif "Sticker" == msg_type:
         bot.send_sticker(message.chat.id, file, reply_to_message_id=message.id)
 
     elif "Voice" == msg_type:
-        bot.send_voice(message.chat.id, file, caption=msg.caption, thumb=thumb, caption_entities=msg.caption_entities, reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
+        bot.send_voice(message.chat.id, file, caption=msg.caption, thumb=thumb, caption_entities=msg.caption_entities,
+                       reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
 
     elif "Audio" == msg_type:
         try:
@@ -285,17 +230,20 @@ def handle_private(message: pyrogram.types.messages_and_media.message.Message, c
         except:
             thumb = None
 
-        bot.send_audio(message.chat.id, file, caption=msg.caption, caption_entities=msg.caption_entities, reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
-        if thumb is not None:
+        bot.send_audio(message.chat.id, file, caption=msg.caption, caption_entities=msg.caption_entities,
+                       reply_to_message_id=message.id, progress=progress, progress_args=[message, "up"])
+        if thumb != None:
             os.remove(thumb)
 
     elif "Photo" == msg_type:
-        bot.send_photo(message.chat.id, file, caption=msg.caption, caption_entities=msg.caption_entities, reply_to_message_id=message.id)
+        bot.send_photo(message.chat.id, file, caption=msg.caption,
+                       caption_entities=msg.caption_entities, reply_to_message_id=message.id)
 
     os.remove(file)
     if os.path.exists(f'{message.id}upstatus.txt'):
         os.remove(f'{message.id}upstatus.txt')
     bot.delete_messages(message.chat.id, [smsg.id])
+
 
 # get the type of message
 def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
