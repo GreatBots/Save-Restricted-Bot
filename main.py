@@ -84,16 +84,16 @@ def send_help(client: pyrogram.client.Client, message: pyrogram.types.messages_a
                      reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🌨 Support", url="https://t.me/oddchats")]]), reply_to_message_id=message.id)
 
 @bot.on_message(filters.private)
-async def forces_sub(client: Client, message: types.Message):
+def forces_sub(client: Client, message: types.Message):
     buttons = [[InlineKeyboardButton(text="📢 Join Update Channel 📢", url=f"https://t.me/{Config.FORCE_SUB}") ]]
     text = "**You Must Join My Updates Channel To Use Me!**"
     try:
-        user = await client.get_chat_member(Config.FORCE_SUB, message.from_user.id)    
-        if user.status == enums.ChatMemberStatus.BANNED:                                   
-            return await client.send_message(message.from_user.id, text="Sorry, You Are Banned To Use Me!")  
+        user = client.get_chat_member(Config.FORCE_SUB, message.from_user.id)
+        if user.status == enums.ChatMemberStatus.BANNED:
+            return client.send_message(message.from_user.id, text="Sorry, You Are Banned To Use Me!")  
     except UserNotParticipant:                       
-        return await message.reply_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
-    return await message.reply_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
+        return message.reply_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
+    return message.reply_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
 
 @bot.on_message(filters.text)
 def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
