@@ -60,40 +60,51 @@ def progress(current, total, message, type):
         fileup.write(f"{current * 100 / total:.1f}%")
 
 
-# start command
+# Function to check if the user is subscribed to the channel
+def is_user_subscribed(client, message):
+    # Check if the user is subscribed to the channel
+    # Replace 'your_channel_username' with your channel username
+    channel_username = "oddprojects"
+    invite_link = f"https://t.me/{channel_username}"
+    if client.get_chat_member(channel_username, message.from_user.id).status == "left":
+        return False, invite_link
+    return True, None
+
+# Start command
 @bot.on_message(filters.command(["start"]))
-def send_start(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
-    bot.send_message(
-        message.chat.id,
-        f"👋 Hi **{message.from_user.mention}**, __I am Save Restricted Bot, I can send you restricted content by its post link__\n\n**To Use See 👉 /help**",
-        reply_markup=InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("⛅️ Updates", url="https://t.me/oddprojects"),
-                InlineKeyboardButton("🌨 Support", url="https://t.me/oddchats")
-            ],
-            [
-                InlineKeyboardButton("👨🏻‍💻 Developer", url="https://t.me/anocy")
-            ]
-        ]),
-        reply_to_message_id=message.id
-    )
+def send_start(client, message):
+    subscribed, invite_link = is_user_subscribed(client, message)
+    if subscribed:
+        bot.send_message(
+            message.chat.id,
+            f"👋 Hi **{message.from_user.mention}**, __I am Save Restricted Bot, I can send you restricted content by its post link__\n\n**To Use See 👉 /help**",
+            reply_markup=InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton("⛅️ Updates", url="https://t.me/oddprojects"),
+                    InlineKeyboardButton("🌨 Support", url="https://t.me/oddchats")
+                ],
+                [
+                    InlineKeyboardButton("👨🏻‍💻 Developer", url="https://t.me/anocy")
+                ]
+            ]),
+            reply_to_message_id=message.id
+        )
+    else:
+        bot.send_message(
+            message.chat.id,
+            "Please subscribe to our channel to use the bot.",
+            reply_markup=InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton("Join Updates Channel", url=invite_link)
+                ]
+            ]),
+            reply_to_message_id=message.id
+        )
     
 @bot.on_message(filters.command(["help"]))
 def send_help(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
     bot.send_message(message.chat.id, f"{USAGE}",
                      reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🌨 Support", url="https://t.me/oddchats")]]), reply_to_message_id=message.id)
-
-@bot.on_message(filters.private)
-def forces_sub(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
-    buttons = [[InlineKeyboardButton(text="📢 Join Update Channel 📢", url=f"https://t.me/{Config.FORCE_SUB}") ]]
-    text = "**You Must Join My Updates Channel To Use Me!**"
-    try:
-        user = client.get_chat_member(Config.FORCE_SUB, message.from_user.id)
-        if user.status == enums.ChatMemberStatus.BANNED:
-            return client.send_message(message.from_user.id, text="Sorry, You Are Banned To Use Me!")  
-    except UserNotParticipant:                       
-        return message.reply_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
-    return message.reply_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
 
 @bot.on_message(filters.text)
 def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
