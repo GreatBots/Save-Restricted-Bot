@@ -1,6 +1,6 @@
 import pyrogram
 from pyrogram import Client, filters
-from pyrogram.errors import UserAlreadyParticipant, InviteHashExpired, UsernameNotOccupied
+from pyrogram.errors import UserAlreadyParticipant, InviteHashExpired, UsernameNotOccupied, UserNotParticipant
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import time
 import os
@@ -63,8 +63,38 @@ def progress(current, total, message, type):
 # start command
 @bot.on_message(filters.command(["start"]))
 def send_start(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
-    bot.send_message(message.chat.id, f"__👋 Hi **{message.from_user.mention}**, I am Save Restricted Bot, I can send you restricted content by it's post link__\n\n{USAGE}",
-                     reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🌐 Source Code", url="https://github.com/Snowball-0/Save-Restricted-Bot")]]), reply_to_message_id=message.id)
+    bot.send_message(
+        message.chat.id,
+        f"👋 Hi **{message.from_user.mention}**, __I am Save Restricted Bot, I can send you restricted content by its post link__\n\n**To Use See 👉 /help**",
+        reply_markup=InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("⛅️ Updates", url="https://t.me/oddprojects"),
+                InlineKeyboardButton("🌨 Support", url="https://t.me/oddchats")
+            ],
+            [
+                InlineKeyboardButton("👨🏻‍💻 Developer", url="https://t.me/anocy")
+            ]
+        ]),
+        reply_to_message_id=message.id
+    )
+    
+@bot.on_message(filters.command(["help"]))
+def send_help(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
+    bot.send_message(message.chat.id, f"{USAGE}",
+                     reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🌨 Support", url="https://t.me/oddchats")]]), reply_to_message_id=message.id)
+
+@bot.on_message(filters.private & filters.create(not_subscribed))
+def forces_sub(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
+    buttons = [[InlineKeyboardButton(text="📢 Join Update Channel 📢", url=f"https://t.me/{Config.FORCE_SUB}") ]]
+    text = "**You Must Join My Updates Channel To Use Me!**"
+    try:
+        user = await client.get_chat_member(Config.FORCE_SUB, message.from_user.id)    
+        if user.status == enums.ChatMemberStatus.BANNED:                                   
+            return await client.send_message(message.from_user.id, text="Sorry, You Are Banned To Use Me!")  
+    except UserNotParticipant:                       
+        return await message.reply_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
+    return await message.reply_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
+          
 
 
 @bot.on_message(filters.text)
