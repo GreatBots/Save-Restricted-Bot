@@ -62,13 +62,16 @@ def progress(current, total, message, type):
 
 # Function to check if the user is subscribed to the channel
 def is_user_subscribed(client, message):
-    # Check if the user is subscribed to the channel
     # Replace 'your_channel_username' with your channel username
     channel_username = "oddprojects"
     invite_link = f"https://t.me/{channel_username}"
-    if client.get_chat_member(channel_username, message.from_user.id).status == "left":
+    try:
+        # Check if the user is subscribed to the channel
+        if client.get_chat_member(channel_username, message.from_user.id).status == "left":
+            return False, invite_link
+        return True, None
+    except UserNotParticipant:
         return False, invite_link
-    return True, None
 
 # Start command
 @bot.on_message(filters.command(["start"]))
