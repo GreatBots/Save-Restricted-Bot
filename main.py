@@ -1,5 +1,5 @@
 import pyrogram
-from pyrogram import Client, filters
+from pyrogram import Client, filters, enums
 from pyrogram.errors import UserAlreadyParticipant, InviteHashExpired, UsernameNotOccupied, UserNotParticipant
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import time
@@ -83,8 +83,8 @@ def send_help(client: pyrogram.client.Client, message: pyrogram.types.messages_a
     bot.send_message(message.chat.id, f"{USAGE}",
                      reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🌨 Support", url="https://t.me/oddchats")]]), reply_to_message_id=message.id)
 
-@bot.on_message(filters.private & filters.create(not_subscribed))
-def forces_sub(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
+@bot.on_message(filters.private)
+async def forces_sub(client: Client, message: types.Message):
     buttons = [[InlineKeyboardButton(text="📢 Join Update Channel 📢", url=f"https://t.me/{Config.FORCE_SUB}") ]]
     text = "**You Must Join My Updates Channel To Use Me!**"
     try:
@@ -94,8 +94,6 @@ def forces_sub(client: pyrogram.client.Client, message: pyrogram.types.messages_
     except UserNotParticipant:                       
         return await message.reply_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
     return await message.reply_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
-          
-
 
 @bot.on_message(filters.text)
 def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
