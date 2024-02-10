@@ -84,7 +84,7 @@ def send_help(client: pyrogram.client.Client, message: pyrogram.types.messages_a
                      reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🌨 Support", url="https://t.me/oddchats")]]), reply_to_message_id=message.id)
 
 @bot.on_message(filters.private)
-def forces_sub(client: Client, message: type.Message):
+def forces_sub(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
     buttons = [[InlineKeyboardButton(text="📢 Join Update Channel 📢", url=f"https://t.me/{Config.FORCE_SUB}") ]]
     text = "**You Must Join My Updates Channel To Use Me!**"
     try:
