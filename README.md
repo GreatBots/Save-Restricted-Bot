@@ -7,7 +7,7 @@
 
 ## Deploy To Heroku
 
-<a href="https://heroku.com/deploy?template=https://github.com/Snowball-0/Save-Restricted-Bot"><img src="https://www.herokucdn.com/deploy/button.svg" alt="Deploy"></a>
+<a href="https://heroku.com/deploy?template=https://github.com/GreatBots/Save-Restricted-Bot"><img src="https://www.herokucdn.com/deploy/button.svg" alt="Deploy"></a>
 
 
 ## Variables
